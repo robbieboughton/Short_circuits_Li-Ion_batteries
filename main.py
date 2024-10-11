@@ -74,16 +74,16 @@ def single_battery_model(t, T, I, R, h, c, v, T_env):
 l = 0.07
 w = 0.02
 v = l*w*w
-N = 3 # 5 cells
+N = 5 # 5 cells
 t = 100 # timesteps
-c = 1e6 # Most volatile parameter. Previously it blew up at 6 or 7. Parameter calculation seems to be the issue here
+c = 1e6 
 h = 8
 h_bb = 13
 I = 2.7
 T_env = 20
 # T = np.full((t,N),20)
 R = np.full(N,1.42)
-t_span = (0, 9)
+t_span = (0, 499)
 T0 = np.full(N, T_env)
 
 # for i in range(t-1):
@@ -105,6 +105,8 @@ T0 = np.full(N, T_env)
 #         # Differential equation
 #         dT_dt[j] = (Q_gen-Q_loss)/c
 #     T[i+1,:] = T[i,:]+dT_dt
+
+"Indexed model using ODE solver"
 
 def battery_pack_model(t, T, I, R, h, h_bb, c, l, w, T_env, N):
     # Reshape T into an N-element array (one temp for each battery)
@@ -130,6 +132,17 @@ def battery_pack_model(t, T, I, R, h, h_bb, c, l, w, T_env, N):
 
     return dT_dt
 
-sol = solve_ivp(battery_pack_model, t_span, T0, args=(I, R, h, h_bb, c, l, w, T_env, N), t_eval=np.arange(10))
+sol = solve_ivp(battery_pack_model, t_span, T0, args=(I, R, h, h_bb, c, l, w, T_env, N), t_eval=np.arange(500))
 print(sol.y)
 
+final_temperatures = sol.y[:, -1]
+batteries = np.arange(1, N + 1)  # Battery indices
+
+plt.bar(batteries, final_temperatures, color='b', alpha=0.7)
+plt.xlabel('Battery Number')
+plt.ylabel('Final Temperature (°C)')
+plt.title('Final Temperatures of Each Battery')
+plt.xticks(batteries)
+plt.ylim([25,26])
+
+plt.show()
