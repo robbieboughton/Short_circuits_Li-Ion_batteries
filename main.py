@@ -75,15 +75,15 @@ l = 0.07
 w = 0.02
 v = l*w*w
 N = 5 # 5 cells
-t = 100 # timesteps
+t = 2000 # timesteps
 c = 1e6 
 h = 8
-h_bb = 13
+h_bb = 10
 I = 2.7
 T_env = 20
 # T = np.full((t,N),20)
 R = np.full(N,1.42)
-t_span = (0, 499)
+t_span = (0, t-1)
 T0 = np.full(N, T_env)
 
 # for i in range(t-1):
@@ -132,7 +132,7 @@ def battery_pack_model(t, T, I, R, h, h_bb, c, l, w, T_env, N):
 
     return dT_dt
 
-sol = solve_ivp(battery_pack_model, t_span, T0, args=(I, R, h, h_bb, c, l, w, T_env, N), t_eval=np.arange(500))
+sol = solve_ivp(battery_pack_model, t_span, T0, args=(I, R, h, h_bb, c, l, w, T_env, N), t_eval=np.arange(t))
 print(sol.y)
 
 final_temperatures = sol.y[:, -1]
@@ -143,6 +143,6 @@ plt.xlabel('Battery Number')
 plt.ylabel('Final Temperature (°C)')
 plt.title('Final Temperatures of Each Battery')
 plt.xticks(batteries)
-plt.ylim([25,26])
+plt.ylim([30,33])
 
 plt.show()
