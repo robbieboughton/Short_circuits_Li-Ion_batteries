@@ -44,15 +44,15 @@ def single_battery_model(t, T, I, R, h, c, v, T_env):
 "Single cell model ODE solver"
 
 # # Defining and initialising Variables
-# l = 0.07
-# w = 0.02
+# l = 0.065
+# w = 0.018
 # v = w*w*l
-# c = 1e6 # should be 1x10^6
+# c = 1899335 # should be 1x10^6
 # h = 8 # was 13 but got values below 20 (shouldn't happen)
-# I = 2.9
+# I = 6.7
 # T_env = 20
 # T = np.full(100,20)
-# R = 1.42
+# R = 0.05
 # t_span = (0, 99)
 # T0 = T_env
 
@@ -71,18 +71,20 @@ def single_battery_model(t, T, I, R, h, c, v, T_env):
 "Now the indexed model"
 
 # Defining and initialising Variables
-l = 0.07
-w = 0.02
+l = 0.065
+w = 0.018
 v = l*w*w
-N = 5 # 5 cells
+N = 74 # 5 cells
 t = 2000 # timesteps
-c = 1e6 
+c = 1899335 # Estimated s.h.c of 40 J/K 
 h = 8
-h_bb = 10
-I = 2.7
+h_bb = 10000
+
+V = np.full(N,3.8)
 T_env = 20
 # T = np.full((t,N),20)
-R = np.full(N,1.42)
+R = np.full(N,0.05)
+R[round(N/2)] = 0.001
 t_span = (0, t-1)
 T0 = np.full(N, T_env)
 
@@ -114,6 +116,8 @@ def battery_pack_model(t, T, I, R, h, h_bb, c, l, w, T_env, N):
     dT_dt = np.zeros(N)  # Initialize array for temperature derivatives
     
     for j in range(N):
+        I = (V[j]/R[j])
+        
         Q_gen = ((I/N)**2)*R[j] # Dividing current by 5 to assume current const. over whole pack
         if j == 0:
             Q_loss_eb = h*(T[j]-T_env)*(3*(l*w)+2*(w*w))
@@ -143,6 +147,6 @@ plt.xlabel('Battery Number')
 plt.ylabel('Final Temperature (°C)')
 plt.title('Final Temperatures of Each Battery')
 plt.xticks(batteries)
-plt.ylim([30,33])
+# plt.ylim([20.5,21.3])
 
 plt.show()
