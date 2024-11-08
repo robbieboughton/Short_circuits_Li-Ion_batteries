@@ -47,16 +47,15 @@ def single_battery_model(t, T, I, R, h, c, v, T_env):
 # l = 0.065
 # w = 0.018
 # v = w*w*l
-# c = 1899335 # should be 1x10^6
+# c = 1899335
 # h = 8 # was 13 but got values below 20 (shouldn't happen)
 # I = 6.7
 # T_env = 20
-# T = np.full(100,20)
 # R = 0.05
-# t_span = (0, 99)
+# t_span = (0, 9999)
 # T0 = T_env
 
-# sol = solve_ivp(single_battery_model, t_span, [T0], args=(I, R, h, c, v, T_env), t_eval=np.arange(100))
+# sol = solve_ivp(single_battery_model, t_span, [T0], args=(I, R, h, c, v, T_env), t_eval=np.arange(0,100,0.01))
 
 # # Plot the result
 # plt.plot(sol.t, sol.y[0], label="Battery Temperature")
@@ -74,17 +73,18 @@ def single_battery_model(t, T, I, R, h, c, v, T_env):
 l = 0.065
 w = 0.018
 v = l*w*w
-N = 74 # 5 cells
-t = 2000 # timesteps
+N = 5 # 5 cells
+t = 5000 # timesteps
 c = 1899335 # Estimated s.h.c of 40 J/K 
+# c = 901425.178
 h = 8
-h_bb = 10000
+h_bb = 10
 
 V = np.full(N,3.8)
 T_env = 20
 # T = np.full((t,N),20)
 R = np.full(N,0.05)
-R[round(N/2)] = 0.001
+# R[round(N/2)] = 0.001
 t_span = (0, t-1)
 T0 = np.full(N, T_env)
 
@@ -110,14 +110,14 @@ T0 = np.full(N, T_env)
 
 "Indexed model using ODE solver"
 
-def battery_pack_model(t, T, I, R, h, h_bb, c, l, w, T_env, N):
+def battery_pack_model(t, T, R, h, h_bb, c, l, w, T_env, N):
     # Reshape T into an N-element array (one temp for each battery)
     T = np.reshape(T, (N,))
     dT_dt = np.zeros(N)  # Initialize array for temperature derivatives
-    
+    # I = np.zeros(N,dtype=int)
     for j in range(N):
-        I = (V[j]/R[j])
-        
+        uncapped_current = V[j]/R[j]
+        I = min(uncapped_current,6.7)
         Q_gen = ((I/N)**2)*R[j] # Dividing current by 5 to assume current const. over whole pack
         if j == 0:
             Q_loss_eb = h*(T[j]-T_env)*(3*(l*w)+2*(w*w))
@@ -136,7 +136,7 @@ def battery_pack_model(t, T, I, R, h, h_bb, c, l, w, T_env, N):
 
     return dT_dt
 
-sol = solve_ivp(battery_pack_model, t_span, T0, args=(I, R, h, h_bb, c, l, w, T_env, N), t_eval=np.arange(t))
+sol = solve_ivp(battery_pack_model, t_span, T0, args=(R, h, h_bb, c, l, w, T_env, N), t_eval=np.arange(t))
 print(sol.y)
 
 final_temperatures = sol.y[:, -1]
@@ -147,6 +147,10 @@ plt.xlabel('Battery Number')
 plt.ylabel('Final Temperature (°C)')
 plt.title('Final Temperatures of Each Battery')
 plt.xticks(batteries)
-# plt.ylim([20.5,21.3])
+plt.ylim([22,24])
+# plt.xlim([35,41])
 
 plt.show()
+# print(sol.y[37])
+# print(sol.y[38])
+# print(sol.y[39])
