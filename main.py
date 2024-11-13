@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 "Battery model function"
 
 def single_battery_model(t, T, I, R, h, c, v, T_env):
-    Q_gen = (I ** 2) * R
+    Q_gen = (V ** 2)/R
     delta_T = T - T_env
     Q_loss = h * delta_T
     dT_dt = (Q_gen - Q_loss) / (c*v)
@@ -50,12 +50,13 @@ def single_battery_model(t, T, I, R, h, c, v, T_env):
 # c = 1899335
 # h = 8 # was 13 but got values below 20 (shouldn't happen)
 # I = 6.7
+# V = 0.3
 # T_env = 20
 # R = 0.05
-# t_span = (0, 9999)
+# t_span = (0, 999)
 # T0 = T_env
 
-# sol = solve_ivp(single_battery_model, t_span, [T0], args=(I, R, h, c, v, T_env), t_eval=np.arange(0,100,0.01))
+# sol = solve_ivp(single_battery_model, t_span, [T0], args=(I, R, h, c, v, T_env), t_eval=np.arange(0,100,0.1))
 
 # # Plot the result
 # plt.plot(sol.t, sol.y[0], label="Battery Temperature")
@@ -76,11 +77,10 @@ v = l*w*w
 N = 5 # 5 cells
 t = 5000 # timesteps
 c = 1899335 # Estimated s.h.c of 40 J/K 
-# c = 901425.178
 h = 8
 h_bb = 10
 
-V = np.full(N,3.8)
+V = 0.1
 T_env = 20
 # T = np.full((t,N),20)
 R = np.full(N,0.05)
@@ -116,9 +116,9 @@ def battery_pack_model(t, T, R, h, h_bb, c, l, w, T_env, N):
     dT_dt = np.zeros(N)  # Initialize array for temperature derivatives
     # I = np.zeros(N,dtype=int)
     for j in range(N):
-        uncapped_current = V[j]/R[j]
-        I = min(uncapped_current,6.7)
-        Q_gen = ((I/N)**2)*R[j] # Dividing current by 5 to assume current const. over whole pack
+        # I = V/R[j]
+        # I = min(uncapped_current,6.7)
+        Q_gen = (V**2)/R[j] # Dividing current by 5 to assume current const. over whole pack
         if j == 0:
             Q_loss_eb = h*(T[j]-T_env)*(3*(l*w)+2*(w*w))
             Q_loss_bb = h_bb*(T[j]-T[j+1])*(l*w)
@@ -147,7 +147,7 @@ plt.xlabel('Battery Number')
 plt.ylabel('Final Temperature (°C)')
 plt.title('Final Temperatures of Each Battery')
 plt.xticks(batteries)
-plt.ylim([22,24])
+plt.ylim([25,30])
 # plt.xlim([35,41])
 
 plt.show()
