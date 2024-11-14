@@ -9,6 +9,7 @@ Created on Fri Oct  4 10:28:18 2024
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
+import math
 
 "Battery model function"
 
@@ -79,14 +80,13 @@ t = 5000 # timesteps
 c = 1899335 # Estimated s.h.c of 40 J/K 
 h = 8
 h_bb = 10
-
 V = 0.1
 T_env = 20
-# T = np.full((t,N),20)
 R = np.full(N,0.05)
-# R[round(N/2)] = 0.001
 t_span = (0, t-1)
 T0 = np.full(N, T_env)
+n_sc = round(N/2)
+t_dg = 300
 
 # for i in range(t-1):
 #     dT_dt = np.full(N,0)
@@ -107,6 +107,16 @@ T0 = np.full(N, T_env)
 #         # Differential equation
 #         dT_dt[j] = (Q_gen-Q_loss)/c
 #     T[i+1,:] = T[i,:]+dT_dt
+"Adding data recording"
+
+temperature_data = []
+resistance_data = []
+
+"Time-dependent resistance function"
+
+def time_dependent_resistance(n_sc,t,t_dg):
+    R_sc = R[n_sc]*0.9 # Highly volatile rise in temperature with even a slightly lower resistance. Problem here
+    return R_sc
 
 "Indexed model using ODE solver"
 
@@ -114,11 +124,14 @@ def battery_pack_model(t, T, R, h, h_bb, c, l, w, T_env, N):
     # Reshape T into an N-element array (one temp for each battery)
     T = np.reshape(T, (N,))
     dT_dt = np.zeros(N)  # Initialize array for temperature derivatives
-    # I = np.zeros(N,dtype=int)
+    # print(t)
+    temperature_data.append(T.copy())
+    resistance_data.append(R.copy())
+    
+    R[n_sc] = time_dependent_resistance(n_sc,t,t_dg)
+    print(R[n_sc])
     for j in range(N):
-        # I = V/R[j]
-        # I = min(uncapped_current,6.7)
-        Q_gen = (V**2)/R[j] # Dividing current by 5 to assume current const. over whole pack
+        Q_gen = (V**2)/R[j]
         if j == 0:
             Q_loss_eb = h*(T[j]-T_env)*(3*(l*w)+2*(w*w))
             Q_loss_bb = h_bb*(T[j]-T[j+1])*(l*w)
@@ -136,8 +149,8 @@ def battery_pack_model(t, T, R, h, h_bb, c, l, w, T_env, N):
 
     return dT_dt
 
-sol = solve_ivp(battery_pack_model, t_span, T0, args=(R, h, h_bb, c, l, w, T_env, N), t_eval=np.arange(t))
-print(sol.y)
+sol = solve_ivp(battery_pack_model, t_span, T0, args=(R, h, h_bb, c, l, w, T_env, N), t_eval=np.arange(0,t,1))
+# print(sol.y)
 
 final_temperatures = sol.y[:, -1]
 batteries = np.arange(1, N + 1)  # Battery indices
@@ -147,10 +160,11 @@ plt.xlabel('Battery Number')
 plt.ylabel('Final Temperature (°C)')
 plt.title('Final Temperatures of Each Battery')
 plt.xticks(batteries)
-plt.ylim([25,30])
-# plt.xlim([35,41])
+# plt.ylim([25,30])
 
 plt.show()
-# print(sol.y[37])
-# print(sol.y[38])
-# print(sol.y[39])
+
+"Formatting saved data"
+
+temperature_data = np.array(temperature_data)
+resistance_data = np.array(resistance_data)
