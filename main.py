@@ -10,6 +10,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 import math as m
+import pandas as pd
 
 "Battery model function"
 
@@ -71,28 +72,10 @@ def single_battery_model(t, T, I, R, h, c, v, T_env):
 
 "Now the indexed model"
 
-# Defining and initialising Variables
-l = 0.065
-w = 0.018
-v = l*w*w
-N = 15
-t = 3600
-c = 1899335 # Estimated s.h.c of 40 J/K 
-h = 8
-h_bb = 10
-voltages = np.arange(0.1,1.1,0.1)
-# V = 0.1
-T_env = 20
-t_span = (0, t)
-T0 = np.full(N, T_env)
-n_sc = m.floor(N/2)
-t_dg = 900
-data = {}
-
 "Time-dependent resistance function"
 
 def time_dependent_resistance(n_sc,t,t_dg):
-    # print(t)
+
     R = np.full(N,0.05)
     R[n_sc] *= np.exp(-t/t_dg)
 
@@ -100,18 +83,15 @@ def time_dependent_resistance(n_sc,t,t_dg):
 
 "Indexed model using ODE solver"
 
-def battery_pack_model(t, T, h, h_bb, c, l, w, T_env, N, V):
-    # Reshape T into an N-element array (one temp for each battery)
+def battery_pack_model(t, T, h, h_bb, c, l, w, T_env, N):
     T = np.reshape(T, (N,))
-    # print(t)
 
-    R = time_dependent_resistance(n_sc,t,t_dg)
+    if s_c == 1:
+        R = time_dependent_resistance(n_sc,t,t_dg)
+    else:
+        R = np.full(N, 0.05)
     dT_dt = np.zeros(N)  # Initialize array for temperature derivatives
-    # temperature_data.append(T.copy())
-    # resistance_data.append(R.copy())
 
-    
-    # print(R[n_sc])
     for j in range(N):
         Q_gen = (V**2)/R[j]
         if j == 0:
@@ -131,12 +111,28 @@ def battery_pack_model(t, T, h, h_bb, c, l, w, T_env, N, V):
 
     return dT_dt
 
+"Model for testing"
+
+# # Defining and initialising Variables
+# l = 0.065
+# w = 0.018
+# v = l*w*w
+# N = 15
+# t = 3600
+# c = 1899335 # Estimated s.h.c of 40 J/K 
+# h = 8
+# h_bb = 10
+# V = 0.1
+# T_env = 20
+# t_span = (0, t)
+# T0 = np.full(N, T_env)
+# n_sc = m.floor(N/2)
+# s_c = 1
+# t_dg = 900
 
 # sol = solve_ivp(battery_pack_model, t_span, T0, args=(h, h_bb, c, l, w, T_env, N), atol = 1e-8, rtol = 1e-7)
 # print(sol.t[-1])
 # print(sol.success, sol.message)
-
-# # plt.plot(sol.t, sol.y[2,:])
 
 # final_temperatures = sol.y[:, -1]
 # batteries = np.arange(1, N + 1)  # Battery indices
@@ -146,30 +142,61 @@ def battery_pack_model(t, T, h, h_bb, c, l, w, T_env, N, V):
 # plt.ylabel('Final Temperature (°C)')
 # plt.title('Final Temperatures of Each Battery')
 # plt.xticks(batteries)
-# plt.ylim([25,30])
+
 
 # plt.show()
-"Saving data for different voltages"
 
-for V in voltages:
-    temperature_data = []
-    resistance_data = []
-    # Solve the model for the given voltage
-    sol = solve_ivp(
-        battery_pack_model, t_span, T0, args=(h, h_bb, c, l, w, T_env, N, V), atol=1e-8, rtol=1e-7
-    )
-    temperature_data.append(sol.y.T)  # Store temperature data (timesteps × batteries)
-    resistance_data.append(time_dependent_resistance(n_sc, sol.t, t_dg))  # Store resistance data
+"Data saving"
 
-    # Store the results for this voltage
-    data[V] = {
-        "temperature_data": np.array(temperature_data),  # Shape: (timesteps, batteries)
-        "resistance_data": np.array(resistance_data),    # Optional: Include resistance
-    }
+# Defining and initialising Variables
+l = 0.065
+w = 0.018
+v = l*w*w
+N = 15
+t = 3600
+c = 1899335 # Estimated s.h.c of 40 J/K 
+h = 8
+h_bb = 10
+voltages = np.arange(0.1,1.1,0.1)
+T_env = 20
+t_span = (0, t)
+T0 = np.full(N, T_env)
+n_sc = m.floor(N/2)
+s_c = 0
+t_dg_values = [900, 1800, 2700]
+dataset = []
 
+"Saving data"
+for t_dg in t_dg_values: 
+    for V in voltages:
+        temperature_data = []
+        resistance_data = []
 
-"Formatting saved data"
+        sol = solve_ivp(
+            battery_pack_model, t_span, T0, args=(h, h_bb, c, l, w, T_env, N), atol=1e-8, rtol=1e-7)
+        temperature_data.append(sol.y.T)  # Store temperature data (timesteps × batteries)
+        resistance_at_timesteps = []
+        for t in sol.t:
+            resistance_at_timesteps.append(time_dependent_resistance(n_sc, t, t_dg))
+        resistance_data.append(resistance_at_timesteps)  # Store resistance data
+    
+        for timestep_idx, timestep in enumerate(sol.t):
+            for battery_idx in range(N):
+                dataset.append({
+                    "voltage": V,
+                    "timestep": timestep,
+                    "battery_index": battery_idx,
+                    "temperature": sol.y.T[timestep_idx, battery_idx],
+                    "resistance": resistance_at_timesteps[timestep_idx][battery_idx],
+                    "short_circuit": s_c,
+                    "dendrite_growth_time": t_dg
+                })
 
-np.savez("battery_data_1:15.npz", **data)
+# Convert the dataset list to a Pandas DataFrame
+df = pd.DataFrame(dataset)
 
-
+# Save as a CSV file
+if s_c == 1:
+    df.to_csv("battery_data_isc.csv", index=False)
+else:
+    df.to_csv("battery_data_no_isc.csv", index=False)
