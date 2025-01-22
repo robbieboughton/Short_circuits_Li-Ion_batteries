@@ -83,7 +83,7 @@ def time_dependent_resistance(n_sc,t,t_dg):
 
 "Indexed model using ODE solver"
 
-def battery_pack_model(t, T, h, h_bb, c, l, w, T_env, N):
+def battery_pack_model(t, T, h, h_bb, c, l, w, T_env, N, s_c):
     T = np.reshape(T, (N,))
 
     if s_c == 1:
@@ -173,7 +173,7 @@ for t_dg in t_dg_values:
         resistance_data = []
 
         sol = solve_ivp(
-            battery_pack_model, t_span, T0, args=(h, h_bb, c, l, w, T_env, N), atol=1e-8, rtol=1e-7)
+            battery_pack_model, t_span, T0, args=(h, h_bb, c, l, w, T_env, N, s_c), atol=1e-8, rtol=1e-7)
         temperature_data.append(sol.y.T)  # Store temperature data (timesteps × batteries)
         resistance_at_timesteps = []
         for t in sol.t:
