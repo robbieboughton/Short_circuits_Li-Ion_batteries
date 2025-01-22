@@ -162,9 +162,12 @@ T_env = 20
 t_span = (0, t)
 T0 = np.full(N, T_env)
 n_sc = m.floor(N/2)
-s_c = 0
+s_c = 1
 t_dg_values = [900, 1800, 2700]
 dataset = []
+
+num_timesteps = 150
+t_eval = np.linspace(t_span[0], t_span[1], num_timesteps)
 
 "Saving data"
 for t_dg in t_dg_values: 
@@ -173,12 +176,16 @@ for t_dg in t_dg_values:
         resistance_data = []
 
         sol = solve_ivp(
-            battery_pack_model, t_span, T0, args=(h, h_bb, c, l, w, T_env, N, s_c), atol=1e-8, rtol=1e-7)
+            battery_pack_model, t_span, T0, args=(h, h_bb, c, l, w, T_env, N, s_c), t_eval = t_eval, atol=1e-8, rtol=1e-7,)
         temperature_data.append(sol.y.T)  # Store temperature data (timesteps × batteries)
         resistance_at_timesteps = []
         for t in sol.t:
-            resistance_at_timesteps.append(time_dependent_resistance(n_sc, t, t_dg))
-        resistance_data.append(resistance_at_timesteps)  # Store resistance data
+            if s_c == 1:
+                resistance_at_timesteps.append(time_dependent_resistance(n_sc, t, t_dg))
+            else:
+                resistance_at_timesteps.append(np.full(N, 0.05))
+        resistance_data.append(resistance_at_timesteps)
+        
     
         for timestep_idx, timestep in enumerate(sol.t):
             for battery_idx in range(N):
