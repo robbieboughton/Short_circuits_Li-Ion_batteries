@@ -11,6 +11,7 @@ from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 import math as m
 import pandas as pd
+import os
 
 "Battery model function"
 
@@ -162,7 +163,7 @@ T_env = 20
 t_span = (0, t)
 T0 = np.full(N, T_env)
 n_sc = m.floor(N/2)
-s_c = 1
+s_c = 0
 t_dg_values = [900, 1800, 2700]
 dataset = []
 
@@ -170,11 +171,20 @@ num_timesteps = 150
 t_eval = np.linspace(t_span[0], t_span[1], num_timesteps)
 
 "Saving data"
+
+if not os.path.exists("short_circuit"):
+    os.makedirs("short_circuit")
+if not os.path.exists("no_short_circuit"):
+    os.makedirs("no_short_circuit")
+    
+    
 for t_dg in t_dg_values: 
     for V in voltages:
         temperature_data = []
         resistance_data = []
-
+        temperature_df = pd.DataFrame(columns=['timestep'] + [f'battery_{i+1}' for i in range(N)])
+        resistance_df = pd.DataFrame(columns=['timestep'] + [f'battery_{i+1}' for i in range(N)])
+        
         sol = solve_ivp(
             battery_pack_model, t_span, T0, args=(h, h_bb, c, l, w, T_env, N, s_c), t_eval = t_eval, atol=1e-8, rtol=1e-7,)
         temperature_data.append(sol.y.T)  # Store temperature data (timesteps × batteries)
@@ -188,22 +198,39 @@ for t_dg in t_dg_values:
         
     
         for timestep_idx, timestep in enumerate(sol.t):
-            for battery_idx in range(N):
-                dataset.append({
-                    "voltage": V,
-                    "timestep": timestep,
-                    "battery_index": battery_idx,
-                    "temperature": sol.y.T[timestep_idx, battery_idx],
-                    "resistance": resistance_at_timesteps[timestep_idx][battery_idx],
-                    "short_circuit": s_c,
-                    "dendrite_growth_time": t_dg
-                })
+            # for battery_idx in range(N):
+            #     dataset.append({
+            #         "voltage": V,
+            #         "timestep": timestep,
+            #         "battery_index": battery_idx,
+            #         "temperature": sol.y.T[timestep_idx, battery_idx],
+            #         "resistance": resistance_at_timesteps[timestep_idx][battery_idx],
+            #         "short_circuit": s_c,
+            #         "dendrite_growth_time": t_dg
+            #     })
+            temperature_df.loc[timestep_idx] = [timestep] + list(sol.y.T[timestep_idx])
+            resistance_df.loc[timestep_idx] = [timestep] + list(resistance_at_timesteps[timestep_idx])
+        avg_temperature_df = pd.DataFrame({
+            'timestep': sol.t,
+            'average_temperature': temperature_df.iloc[:, 1:].mean(axis=1)
+        })
+        # # Convert the dataset list to a Pandas DataFrame
+        # df_temp = pd.DataFrame(dataset)
 
-# Convert the dataset list to a Pandas DataFrame
-df = pd.DataFrame(dataset)
+        # Save as a CSV file
+        if s_c == 1:
+            folder = "short_circuit"
+            # file_path = os.path.join(folder_name,f"short_circuit")
+            # df.to_csv(f"voltage{V}_t_dg{t_dg}_temp.csv", index=False)
+            temperature_df.to_csv(f"{folder}/temperature_data_V_{V}_tdg_{t_dg}.csv", index=False)
+            resistance_df.to_csv(f"{folder}/resistance_data_V_{V}_tdg_{t_dg}.csv", index=False)
+            avg_temperature_df.to_csv(f"{folder}/avg_temperature_data_V_{V}_tdg_{t_dg}.csv", index=False)
+        elif s_c == 0:
+            folder = "no_short_circuit"
+            
+            temperature_df.to_csv(f"{folder}/temperature_data_V_{V}_tdg_{t_dg}.csv", index=False)
+            resistance_df.to_csv(f"{folder}/resistance_data_V_{V}_tdg_{t_dg}.csv", index=False) 
+            avg_temperature_df.to_csv(f"{folder}/avg_temperature_data_V_{V}_tdg_{t_dg}.csv", index=False)
+            # df.to_csv("battery_data_no_isc.csv", index=False)
 
-# Save as a CSV file
-if s_c == 1:
-    df.to_csv("battery_data_isc.csv", index=False)
-else:
-    df.to_csv("battery_data_no_isc.csv", index=False)
+
