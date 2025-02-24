@@ -40,45 +40,47 @@ np.set_printoptions(legacy = '1.13')
 
 all_rows = []
 
-for folder_name, label in class_folders.items():
-    folder_path = os.path.join(root_dir, folder_name)
+for j in types:
+
+    for folder_name, label in class_folders.items():
+        folder_path = os.path.join(root_dir, folder_name)
+        
+        for i in t_dg:
     
-    for i in t_dg:
-
-        for V in voltages:
-            file_path = os.path.join(folder_path, f"avg_temperature_data_V_{V}_tdg_{i}.csv")
-            current_file = pd.read_csv(file_path)
-            if os.path.exists(file_path):
-                df = pd.read_csv(file_path)
-                for timestep,avg_temp in zip(df.iloc[:,0], df.iloc[:,1]):
-                    all_rows.append([label,i,V,timestep,avg_temp])
-                # df["Label"] = label
-                # all_data.append(df)
-            else:
-                print(f"Missing file: {file_path}")
-
-final_df = pd.DataFrame(all_rows, columns=["Label", "Dendrite growth time", "Voltage", "Timestep", "Avg Temperature"])
-
-pivot_df = final_df.pivot_table(index=["Label", "Dendrite growth time", "Voltage"], columns="Timestep", values="Avg Temperature")
-
-# Converting to a NumPy 3D array
-X = pivot_df.values[:, np.newaxis, :]  # Shape (num_samples, num_timesteps, 1)
-
-# Extract labels
-y = pivot_df.index.get_level_values("Label").values
-
-# Splitting the dataset
-x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle = True)
-
-print("final 3d array shape:", X.shape)
-
-# eucl_dist = flatdist(scipydist())
-# clf = kneighborstimeseriesclassifier(n_neighbors=8, distance=eucl_dist)
-
-clf = RocketClassifier(num_kernels=500)
-
-clf.fit(x_train, y_train)
-y_pred = clf.predict(x_test)
-
-
-print(accuracy_score(y_test, y_pred))
+            for V in voltages:
+                file_path = os.path.join(folder_path, f"{j}_V_{V}_tdg_{i}.csv")
+                current_file = pd.read_csv(file_path)
+                if os.path.exists(file_path):
+                    df = pd.read_csv(file_path)
+                    for timestep,avg_temp in zip(df.iloc[:,0], df.iloc[:,1]):
+                        all_rows.append([label,i,V,timestep,avg_temp])
+                    # df["Label"] = label
+                    # all_data.append(df)
+                else:
+                    print(f"Missing file: {file_path}")
+    
+    final_df = pd.DataFrame(all_rows, columns=["Label", "Dendrite growth time", "Voltage", "Timestep", "Avg Temperature"])
+    
+    pivot_df = final_df.pivot_table(index=["Label", "Dendrite growth time", "Voltage"], columns="Timestep", values="Avg Temperature")
+    
+    # Converting to a NumPy 3D array
+    X = pivot_df.values[:, np.newaxis, :]  # Shape (num_samples, num_timesteps, 1)
+    
+    # Extract labels
+    y = pivot_df.index.get_level_values("Label").values
+    
+    # Splitting the dataset
+    x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle = True)
+    
+    print("final 3d array shape:", X.shape)
+    
+    # eucl_dist = flatdist(scipydist())
+    # clf = kneighborstimeseriesclassifier(n_neighbors=8, distance=eucl_dist)
+    
+    clf = RocketClassifier(num_kernels=500)
+    
+    clf.fit(x_train, y_train)
+    y_pred = clf.predict(x_test)
+    
+    
+    print(accuracy_score(y_test, y_pred))
