@@ -158,13 +158,13 @@ t = 3600
 c = 1899335 # Estimated s.h.c of 40 J/K 
 h = 8
 h_bb = 10
-voltages = np.arange(0.1,1.1,0.1)
+voltages = np.arange(0.05,1.05,0.1)
 T_env = 20
 t_span = (0, t)
 T0 = np.full(N, T_env)
 n_sc = m.floor(N/2)
 s_c = 0
-t_dg_values = [900, 1800, 2700]
+t_dg_values = [500, 1500, 2500]
 dataset = []
 
 num_timesteps = 150
@@ -172,10 +172,10 @@ t_eval = np.linspace(t_span[0], t_span[1], num_timesteps)
 
 "Saving data"
 
-if not os.path.exists("short_circuit"):
-    os.makedirs("short_circuit")
-if not os.path.exists("no_short_circuit"):
-    os.makedirs("no_short_circuit")
+if not os.path.exists("short_circuit3"):
+    os.makedirs("short_circuit3")
+if not os.path.exists("no_short_circuit3"):
+    os.makedirs("no_short_circuit3")
     
     
 for t_dg in t_dg_values: 
@@ -219,14 +219,14 @@ for t_dg in t_dg_values:
 
         # Save as a CSV file
         if s_c == 1:
-            folder = "short_circuit"
+            folder = "short_circuit3"
             # file_path = os.path.join(folder_name,f"short_circuit")
             # df.to_csv(f"voltage{V}_t_dg{t_dg}_temp.csv", index=False)
             temperature_df.to_csv(f"{folder}/temperature_data_V_{V}_tdg_{t_dg}.csv", index=False)
             resistance_df.to_csv(f"{folder}/resistance_data_V_{V}_tdg_{t_dg}.csv", index=False)
             avg_temperature_df.to_csv(f"{folder}/avg_temperature_data_V_{V}_tdg_{t_dg}.csv", index=False)
         elif s_c == 0:
-            folder = "no_short_circuit"
+            folder = "no_short_circuit3"
             
             temperature_df.to_csv(f"{folder}/temperature_data_V_{V}_tdg_{t_dg}.csv", index=False)
             resistance_df.to_csv(f"{folder}/resistance_data_V_{V}_tdg_{t_dg}.csv", index=False) 
