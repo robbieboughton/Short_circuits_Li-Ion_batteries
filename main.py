@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Oct  4 10:28:18 2024
+# # -*- coding: utf-8 -*-
+# """
+# Created on Fri Oct  4 10:28:18 2024
 
-@author: robbi
-"""
+# @author: robbi
+# """
 
 
 import numpy as np
@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import math as m
 import pandas as pd
 import os
+# os.chdir("Uni_work/Technical_project/Short_circuits_Li-Ion_batteries")
+# print(os.getcwd())
 
 "Battery model function"
 
@@ -84,7 +86,7 @@ def time_dependent_resistance(n_sc,t,t_dg):
 
 "Indexed model using ODE solver"
 
-def battery_pack_model(t, T, h, h_bb, c, l, w, T_env, N, s_c):
+def battery_pack_model(t, T, h, h_bb, c, l, w, T_env, N, s_c, V, t_dg):
     T = np.reshape(T, (N,))
 
     if s_c == 1:
@@ -114,7 +116,7 @@ def battery_pack_model(t, T, h, h_bb, c, l, w, T_env, N, s_c):
 
 "Model for testing"
 
-# # Defining and initialising Variables
+# Defining and initialising Variables
 # l = 0.065
 # w = 0.018
 # v = l*w*w
@@ -131,7 +133,23 @@ def battery_pack_model(t, T, h, h_bb, c, l, w, T_env, N, s_c):
 # s_c = 1
 # t_dg = 900
 
-# sol = solve_ivp(battery_pack_model, t_span, T0, args=(h, h_bb, c, l, w, T_env, N), atol = 1e-8, rtol = 1e-7)
+# l = 0.065
+# w = 0.018
+# v = l*w*w
+# N = 15
+# t = 3600
+# c = 1899335 # Estimated s.h.c of 40 J/K 
+# h = 8
+# h_bb = 10
+# V = 0.1
+# T_env = 20
+# t_span = (0, t)
+# T0 = np.full(N, T_env)
+# n_sc = m.floor(N/2)
+# s_c = 0
+# t_dg = 900
+
+# sol = solve_ivp(battery_pack_model, t_span, T0, args=(h, h_bb, c, l, w, T_env, N, s_c, V, t_dg), atol = 1e-8, rtol = 1e-7)
 # print(sol.t[-1])
 # print(sol.success, sol.message)
 
@@ -139,10 +157,12 @@ def battery_pack_model(t, T, h, h_bb, c, l, w, T_env, N, s_c):
 # batteries = np.arange(1, N + 1)  # Battery indices
 
 # plt.bar(batteries, final_temperatures, color='b', alpha=0.7)
-# plt.xlabel('Battery Number')
-# plt.ylabel('Final Temperature (°C)')
-# plt.title('Final Temperatures of Each Battery')
+# plt.xlabel('Battery Number', fontsize = 15)
+# plt.ylabel('Final Temperature (°C)', fontsize = 15)
+# plt.title('Final Temperatures of Each Battery without a short circuit', fontsize = 15)
 # plt.xticks(batteries)
+# plt.xticks(batteries,fontsize=12)
+# plt.yticks(fontsize=12)
 
 
 # plt.show()
@@ -158,13 +178,13 @@ t = 3600
 c = 1899335 # Estimated s.h.c of 40 J/K 
 h = 8
 h_bb = 10
-voltages = np.arange(0.05,1.05,0.1)
+voltages = np.arange(0.28,0.30,0.002)
 T_env = 20
 t_span = (0, t)
 T0 = np.full(N, T_env)
 n_sc = m.floor(N/2)
-s_c = 0
-t_dg_values = [500, 1500, 2500]
+s_c = 1
+t_dg_values = [900, 1800, 2700]
 dataset = []
 
 num_timesteps = 150
@@ -172,10 +192,10 @@ t_eval = np.linspace(t_span[0], t_span[1], num_timesteps)
 
 "Saving data"
 
-if not os.path.exists("short_circuit3"):
-    os.makedirs("short_circuit3")
-if not os.path.exists("no_short_circuit3"):
-    os.makedirs("no_short_circuit3")
+if not os.path.exists("short_circuit1"):
+    os.makedirs("short_circuit1")
+if not os.path.exists("no_short_circuit1"):
+    os.makedirs("no_short_circuit1")
     
     
 for t_dg in t_dg_values: 
@@ -186,7 +206,7 @@ for t_dg in t_dg_values:
         resistance_df = pd.DataFrame(columns=['timestep'] + [f'battery_{i+1}' for i in range(N)])
         
         sol = solve_ivp(
-            battery_pack_model, t_span, T0, args=(h, h_bb, c, l, w, T_env, N, s_c), t_eval = t_eval, atol=1e-8, rtol=1e-7,)
+            battery_pack_model, t_span, T0, args=(h, h_bb, c, l, w, T_env, N, s_c, V, t_dg), t_eval = t_eval, atol=1e-8, rtol=1e-7,)
         temperature_data.append(sol.y.T)  # Store temperature data (timesteps × batteries)
         resistance_at_timesteps = []
         for t in sol.t:
@@ -219,14 +239,14 @@ for t_dg in t_dg_values:
 
         # Save as a CSV file
         if s_c == 1:
-            folder = "short_circuit3"
+            folder = "short_circuit1"
             # file_path = os.path.join(folder_name,f"short_circuit")
             # df.to_csv(f"voltage{V}_t_dg{t_dg}_temp.csv", index=False)
             temperature_df.to_csv(f"{folder}/temperature_data_V_{V}_tdg_{t_dg}.csv", index=False)
             resistance_df.to_csv(f"{folder}/resistance_data_V_{V}_tdg_{t_dg}.csv", index=False)
             avg_temperature_df.to_csv(f"{folder}/avg_temperature_data_V_{V}_tdg_{t_dg}.csv", index=False)
         elif s_c == 0:
-            folder = "no_short_circuit3"
+            folder = "no_short_circuit1"
             
             temperature_df.to_csv(f"{folder}/temperature_data_V_{V}_tdg_{t_dg}.csv", index=False)
             resistance_df.to_csv(f"{folder}/resistance_data_V_{V}_tdg_{t_dg}.csv", index=False) 
