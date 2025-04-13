@@ -37,7 +37,7 @@ class_folders = {"no_short_circuit1": 0, "short_circuit1": 1}
 
 samples = []
 labels = []
-voltages = [0.03,0.06, 0.09,0.12,0.15,0.18,0.21,0.24,0.27,0.30000000000000004]
+voltages = [0.28,0.28200000000000003, 0.28400000000000003,0.28600000000000003,0.28800000000000003,0.29000000000000004,0.29200000000000004,0.29400000000000004,0.29600000000000004,0.29800000000000004]
 t_dg = [900, 1800, 2700]
 types = ["avg_temperature_data", "resistance_data", "temperature_data"]
 
@@ -137,7 +137,7 @@ class_folders = {"no_short_circuit2": 0, "short_circuit2": 1}
 
 samples = []
 labels = []
-voltages = [0.035,0.065,0.095,0.125, 0.155,0.185,0.215,0.245,0.275,0.30500000000000005]
+voltages = [0.285,0.287,0.289,0.291,0.293, 0.297,0.299,0.301,0.303,0.305]
 t_dg = [500, 1500, 2500]
 types = ["avg_temperature_data", "resistance_data", "temperature_data"]
 
@@ -195,8 +195,8 @@ y_test_row = new_df.index.get_level_values("Label").values
 classifiers = {
     # "Rocket Classifier": RocketClassifier(),
     "Time Series Forest": TimeSeriesForestClassifier(),
-#     # "Shapelet Transform": ShapeletTransformClassifier(),
-#     # "Catch22 Classifier": Catch22Classifier(),
+    # "Shapelet Transform": ShapeletTransformClassifier(),
+    # "Catch22 Classifier": Catch22Classifier(),
 #     # # "Proximity Forest": ProximityForest()
 }
 
@@ -272,7 +272,7 @@ print(X_test_row[np.max(np.where(y_pred == 0)[0])])
 
 # # Run 100 trials
 # for _ in range(num_trials):
-#     x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+#     x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=True)
     
 #     clf.fit(x_train, y_train)
     
