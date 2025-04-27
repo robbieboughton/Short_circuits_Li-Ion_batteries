@@ -68,28 +68,6 @@ final_df = pd.DataFrame(all_rows, columns=["Label", "Dendrite growth time", "Vol
 
 pivot_df = final_df.pivot_table(index=["Label", "Dendrite growth time", "Voltage"], columns="Timestep", values="Avg Temperature")
 
-# metadata = pivot_df.index
-
-# # Reshape temperature data (stack every 3 columns into new rows)
-# reshaped_data = pivot_df.to_numpy().reshape(-1, 3)
-
-# # Repeat metadata to match the new shape
-# expanded_meta = metadata.repeat(pivot_df.shape[1] // 3)
-
-# # Create DataFrame with metadata as index
-# new_df = pd.DataFrame(reshaped_data, index=expanded_meta)
-
-# # Converting to a NumPy 3D array
-# X = new_df.values[:, np.newaxis, :]  # Shape (num_samples, num_timesteps, 1)
-
-# # Extract labels
-# y = new_df.index.get_level_values("Label").values
-
-# # Splitting the dataset
-# x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle = True)
-
-# print("final 3d array shape:", X.shape)
-
 window_size = 3
 
 metadata = pivot_df.index
@@ -116,22 +94,6 @@ y = new_df.index.get_level_values("Label").values
 x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle = True)
 
 print("final 3d array shape:", X.shape)
-
-
-
-
-# eucl_dist = FlatDist(ScipyDist())
-# clf = KNeighborsTimeSeriesClassifier(n_neighbors=8, distance=eucl_dist)
-
-# clf = RocketClassifier(num_kernels=500)
-
-# clf.fit(x_train, y_train)
-# y_pred = clf.predict(x_test)
-
-
-# print(accuracy_score(y_test, y_pred))
-
-# Initialize classifiers
 
 class_folders = {"no_short_circuit2": 0, "short_circuit2": 1}
 
@@ -197,10 +159,8 @@ classifiers = {
     "Time Series Forest": TimeSeriesForestClassifier(),
     # "Shapelet Transform": ShapeletTransformClassifier(),
     # "Catch22 Classifier": Catch22Classifier(),
-#     # # "Proximity Forest": ProximityForest()
 }
 
-# Train and evaluate classifiers
 results = {}
 for name, clf in classifiers.items():
     print(f"Training {name}...")
@@ -210,7 +170,6 @@ for name, clf in classifiers.items():
     results[name] = acc
     print(f"{name} Accuracy: {acc:.4f}")
 
-# Print final results
 print("\nFinal Accuracy Scores:")
 for name, acc in results.items():
     print(f"{name}: {acc:.4f}")
@@ -221,40 +180,7 @@ print("Highest temperature without a short circuit: ")
 print(pivot_df.iloc[:30].values.max())
 print("Temperatures in window of last incorrect prediction: ")
 print(X_test_row[np.max(np.where(y_pred == 0)[0])])
-    
-# # results = {}
-# # for name, clf in classifiers.items():
-# #     print(f"Training {name}...")
-# #     clf.fit(x_train, y_train)
-# #     y_pred = clf.predict(X_test_row)
-# #     acc = accuracy_score(y_test_row, y_pred)
-# #     results[name] = acc
-# #     print(f"{name} Accuracy: {acc:.4f}")
 
-# # # Print final results
-# # print("\nFinal Accuracy Scores:")
-# # for name, acc in results.items():
-# #     print(f"{name}: {acc:.4f}")
-    
-# # bin_size = 4
-# # num_bins = len(y_pred) // bin_size
-
-# # ones_counts = [np.sum(y_pred[i * bin_size: (i + 1) * bin_size]) for i in range(num_bins)]
-
-# # group_indices = np.arange(1, num_bins + 1)
-
-# # plt.figure(figsize=(10, 5))
-# # plt.bar(group_indices, ones_counts, color='blue', alpha=0.7, edgecolor='black')
-
-# # plt.xlabel('Group of 4')
-# # plt.ylabel('Number of 1s in Group')
-# # plt.title('Number of 1s in Each 4-row Group of y_pred')
-# # plt.xticks(group_indices, rotation=90)
-# # plt.yticks(range(5))
-# # plt.ylim(0, 4) 
-# # plt.grid(axis='y', linestyle='--', alpha=0.7)
-
-# # plt.show()
     
 # # Number of trials
 # num_trials = 50
