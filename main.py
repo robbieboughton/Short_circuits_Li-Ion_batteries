@@ -63,7 +63,6 @@ def single_battery_model(t, T, I, R, h, c, v, T_env):
 
 # sol = solve_ivp(single_battery_model, t_span, [T0], args=(I, R, h, c, v, T_env), t_eval=np.arange(0,300),max_step = 0.1)
 
-# # Plot the result
 # plt.plot(sol.t, sol.y[0], label="Battery Temperature")
 # plt.xlabel('Time (seconds)')
 # plt.ylabel('Temperature (°C)')
